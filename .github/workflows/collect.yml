@@ -2,14 +2,12 @@ name: Collecte trafic horaire
 
 on:
   schedule:
-    # Toutes les heures, à :05 (évite la congestion des runners à :00)
     - cron: '5 * * * *'
-  # Permet de lancer manuellement depuis l'interface GitHub
   workflow_dispatch:
 
 permissions:
   contents: read
-  id-token: write   # indispensable pour Workload Identity Federation
+  id-token: write
 
 jobs:
   collect:
