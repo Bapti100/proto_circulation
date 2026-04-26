@@ -89,8 +89,8 @@ def get_sheet(sheet_id):
 
 
 def main():
-    api_key  = os.environ["AIzaSyBzQM3l5GZtbWP-RcObDHODtQG3WJyOpig"]
-    sheet_id = os.environ["1TtaK3bvo0n3QXAZoaBg-tSrXI6blZYLr82hRegFqTp0"]
+    api_key  = os.environ["GMAPS_API_KEY"]
+    sheet_id = os.environ["GSHEET_ID"]
     ts_utc   = datetime.datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S")
     ts_local = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     print(f"[{ts_utc}] Collecte en cours pour {len(SEGMENTS)} tronçon(s)...")
