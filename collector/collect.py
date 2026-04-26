@@ -38,7 +38,11 @@ HEADER = [
 
 
 def get_token():
-    """Obtient un token OAuth2 via Application Default Credentials (WIF)."""
+    """Récupère le token injecté par google-github-actions/auth."""
+    token = os.environ.get("GOOGLE_OAUTH_ACCESS_TOKEN")
+    if token:
+        return token
+    # Fallback local
     scopes = ["https://www.googleapis.com/auth/spreadsheets"]
     creds, _ = google.auth.default(scopes=scopes)
     auth_req = google.auth.transport.requests.Request()
