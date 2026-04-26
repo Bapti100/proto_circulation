@@ -38,11 +38,11 @@ HEADER = [
 
 
 def get_token():
-    """Récupère le token injecté par google-github-actions/auth."""
     token = os.environ.get("GOOGLE_OAUTH_ACCESS_TOKEN")
     if token:
+        print(f"✓ Token via GOOGLE_OAUTH_ACCESS_TOKEN (longueur: {len(token)})")
         return token
-    # Fallback local
+    print("⚠️ GOOGLE_OAUTH_ACCESS_TOKEN non trouvé, fallback google.auth.default")
     scopes = ["https://www.googleapis.com/auth/spreadsheets"]
     creds, _ = google.auth.default(scopes=scopes)
     auth_req = google.auth.transport.requests.Request()
