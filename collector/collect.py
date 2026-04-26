@@ -75,7 +75,14 @@ def get_sheet(sheet_id):
         "https://www.googleapis.com/auth/drive",
     ]
     creds, _ = google.auth.default(scopes=scopes)
+    
+    # Forcer le rafraîchissement du token
+    import google.auth.transport.requests
+    request = google.auth.transport.requests.Request()
+    creds.refresh(request)
+    
     client = gspread.Client(auth=creds)
+    client.session = google.auth.transport.requests.AuthorizedSession(creds)
     spreadsheet = client.open_by_key(sheet_id)
     try:
         worksheet = spreadsheet.worksheet(SHEET_NAME)
