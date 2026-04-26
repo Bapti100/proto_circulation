@@ -75,7 +75,7 @@ def get_sheet(sheet_id):
         "https://www.googleapis.com/auth/drive",
     ]
     creds, _ = google.auth.default(scopes=scopes)
-    client = gspread.authorize(creds)
+    client = gspread.Client(auth=creds)
     spreadsheet = client.open_by_key(sheet_id)
     try:
         worksheet = spreadsheet.worksheet(SHEET_NAME)
