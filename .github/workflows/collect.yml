@@ -40,4 +40,4 @@ jobs:
         env:
           GMAPS_API_KEY: ${{ secrets.GMAPS_API_KEY }}
           GSHEET_ID:     ${{ secrets.GSHEET_ID }}
-        run: python collector/gcollect.py
+        run: python collector/collect.py
