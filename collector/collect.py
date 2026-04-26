@@ -63,7 +63,7 @@ def ensure_sheet_header(sheet_id, token):
     """Vérifie que l'onglet existe et a les bons en-têtes."""
     # Lire la première ligne
     try:
-        data = sheets_request("GET", f"{sheet_id}/values/{SHEET_NAME}!A1:L1", token)
+        data = sheets_request("GET", f"{sheet_id}/values/trafic_data!A1:L1", token)
         values = data.get("values", [])
         if values and values[0] == HEADER:
             return  # En-têtes déjà présents
@@ -73,9 +73,9 @@ def ensure_sheet_header(sheet_id, token):
     # Écrire les en-têtes
     body = {"values": [HEADER]}
     try:
-        sheets_request("PUT",
-            f"{sheet_id}/values/{SHEET_NAME}!A1:L1?valueInputOption=USER_ENTERED",
-            token, body)
+    sheets_request("PUT",
+        f"{sheet_id}/values/trafic_data!A1:L1?valueInputOption=USER_ENTERED",
+        token, body)
         print(f"En-têtes écrits dans l'onglet '{SHEET_NAME}'.")
     except Exception as e:
         print(f"Note: impossible d'écrire les en-têtes : {e}")
@@ -85,7 +85,7 @@ def append_rows(sheet_id, token, rows):
     """Ajoute des lignes à la suite du sheet."""
     body = {"values": rows}
     result = sheets_request("POST",
-        f"{sheet_id}/values/{SHEET_NAME}!A1:L1:append?valueInputOption=USER_ENTERED&insertDataOption=INSERT_ROWS",
+        f"{sheet_id}/values/trafic_data!A1:append?valueInputOption=USER_ENTERED&insertDataOption=INSERT_ROWS",
         token, body)
     return result
 
