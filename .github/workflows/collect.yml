@@ -21,6 +21,7 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Authentification Google Cloud (WIF)
+        id: auth
         uses: google-github-actions/auth@v2
         with:
           workload_identity_provider: ${{ secrets.WIF_PROVIDER }}
@@ -41,4 +42,5 @@ jobs:
         env:
           GMAPS_API_KEY: ${{ secrets.GMAPS_API_KEY }}
           GSHEET_ID:     ${{ secrets.GSHEET_ID }}
+          GOOGLE_OAUTH_ACCESS_TOKEN: ${{ steps.auth.outputs.access_token }}
         run: python collector/collect.py
