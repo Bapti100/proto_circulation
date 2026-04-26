@@ -7,6 +7,10 @@ on:
   # Permet de lancer manuellement depuis l'interface GitHub
   workflow_dispatch:
 
+permissions:
+  contents: read
+  id-token: write   # indispensable pour Workload Identity Federation
+
 jobs:
   collect:
     runs-on: ubuntu-latest
@@ -15,6 +19,12 @@ jobs:
     steps:
       - name: Checkout du dépôt
         uses: actions/checkout@v4
+
+      - name: Authentification Google Cloud (WIF)
+        uses: google-github-actions/auth@v2
+        with:
+          workload_identity_provider: ${{ secrets.WIF_PROVIDER }}
+          service_account: ${{ secrets.WIF_SERVICE_ACCOUNT }}
 
       - name: Setup Python 3.11
         uses: actions/setup-python@v5
@@ -28,7 +38,6 @@ jobs:
 
       - name: Lancer la collecte
         env:
-          GMAPS_API_KEY:      ${{ secrets.GMAPS_API_KEY }}
-          GSHEET_CREDENTIALS: ${{ secrets.GSHEET_CREDENTIALS }}
-          GSHEET_ID:          ${{ secrets.GSHEET_ID }}
+          GMAPS_API_KEY: ${{ secrets.GMAPS_API_KEY }}
+          GSHEET_ID:     ${{ secrets.GSHEET_ID }}
         run: python collector/collect.py
