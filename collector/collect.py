@@ -1,20 +1,13 @@
 """
-collect.py — Collecte horaire du temps de trajet via Google Maps Distance Matrix API
-Écrit les données dans Google Sheets via gspread.
-
-Variables d'environnement requises (GitHub Secrets) :
-  GMAPS_API_KEY  : clé API Google Maps
-  GSHEET_ID      : ID du Google Spreadsheet cible
-
-L'authentification Google Sheets est gérée automatiquement par Workload Identity
-Federation via l'action google-github-actions/auth dans le workflow GitHub Actions.
+collect.py — Collecte horaire via Google Maps + écriture dans Google Sheets
+Utilise l'API Sheets REST directement (plus compatible avec WIF).
 """
 
 import os
 import datetime
 import requests
-import gspread
 import google.auth
+import google.auth.transport.requests
 
 SEGMENTS = [
     {
@@ -44,6 +37,55 @@ HEADER = [
 ]
 
 
+def get_token():
+    """Obtient un token OAuth2 via Application Default Credentials (WIF)."""
+    scopes = ["https://www.googleapis.com/auth/spreadsheets"]
+    creds, _ = google.auth.default(scopes=scopes)
+    auth_req = google.auth.transport.requests.Request()
+    creds.refresh(auth_req)
+    return creds.token
+
+
+def sheets_request(method, path, token, body=None):
+    """Appelle l'API Google Sheets REST."""
+    url = f"https://sheets.googleapis.com/v4/spreadsheets/{path}"
+    headers = {"Authorization": f"Bearer {token}", "Content-Type": "application/json"}
+    resp = requests.request(method, url, headers=headers, json=body, timeout=15)
+    resp.raise_for_status()
+    return resp.json() if resp.text else {}
+
+
+def ensure_sheet_header(sheet_id, token):
+    """Vérifie que l'onglet existe et a les bons en-têtes."""
+    # Lire la première ligne
+    try:
+        data = sheets_request("GET", f"{sheet_id}/values/{SHEET_NAME}!A1:L1", token)
+        values = data.get("values", [])
+        if values and values[0] == HEADER:
+            return  # En-têtes déjà présents
+    except Exception:
+        pass
+
+    # Écrire les en-têtes
+    body = {"values": [HEADER]}
+    try:
+        sheets_request("PUT",
+            f"{sheet_id}/values/{SHEET_NAME}!A1:L1?valueInputOption=USER_ENTERED",
+            token, body)
+        print(f"En-têtes écrits dans l'onglet '{SHEET_NAME}'.")
+    except Exception as e:
+        print(f"Note: impossible d'écrire les en-têtes : {e}")
+
+
+def append_rows(sheet_id, token, rows):
+    """Ajoute des lignes à la suite du sheet."""
+    body = {"values": rows}
+    result = sheets_request("POST",
+        f"{sheet_id}/values/{SHEET_NAME}!A1:L1:append?valueInputOption=USER_ENTERED&insertDataOption=INSERT_ROWS",
+        token, body)
+    return result
+
+
 def get_travel_time(api_key, origin, destination):
     url = "https://maps.googleapis.com/maps/api/distancematrix/json"
     params = {
@@ -63,66 +105,51 @@ def get_travel_time(api_key, origin, destination):
     dm = element["distance"]["value"]
     return {
         "duration_normal_s": dn, "duration_traffic_s": dt,
-        "duration_normal_min": round(dn/60,1), "duration_traffic_min": round(dt/60,1),
-        "delay_min": round((dt-dn)/60,1), "distance_m": dm,
-        "distance_km": round(dm/1000,2), "traffic_ratio": round(dt/dn,3), "status": "OK",
+        "duration_normal_min": round(dn/60, 1), "duration_traffic_min": round(dt/60, 1),
+        "delay_min": round((dt-dn)/60, 1), "distance_m": dm,
+        "distance_km": round(dm/1000, 2), "traffic_ratio": round(dt/dn, 3), "status": "OK",
     }
-
-
-def get_sheet(sheet_id):
-    scopes = [
-        "https://www.googleapis.com/auth/spreadsheets",
-        "https://www.googleapis.com/auth/drive",
-    ]
-    creds, _ = google.auth.default(scopes=scopes)
-    
-    # Forcer le rafraîchissement du token
-    import google.auth.transport.requests
-    request = google.auth.transport.requests.Request()
-    creds.refresh(request)
-    
-    client = gspread.Client(auth=creds)
-    client.session = google.auth.transport.requests.AuthorizedSession(creds)
-    spreadsheet = client.open_by_key(sheet_id)
-    try:
-        worksheet = spreadsheet.worksheet(SHEET_NAME)
-    except gspread.WorksheetNotFound:
-        worksheet = spreadsheet.add_worksheet(title=SHEET_NAME, rows=100, cols=20)
-        worksheet.append_row(HEADER)
-        print(f"Onglet '{SHEET_NAME}' créé.")
-    if worksheet.row_count == 0 or worksheet.cell(1,1).value != HEADER[0]:
-        worksheet.insert_row(HEADER, 1)
-    return worksheet
 
 
 def main():
     api_key  = os.environ["GMAPS_API_KEY"]
     sheet_id = os.environ["GSHEET_ID"]
+
     ts_utc   = datetime.datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S")
     ts_local = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+
     print(f"[{ts_utc}] Collecte en cours pour {len(SEGMENTS)} tronçon(s)...")
-    worksheet = get_sheet(sheet_id)
+
+    token = get_token()
+    print("✓ Token Google obtenu.")
+
+    ensure_sheet_header(sheet_id, token)
+
     rows_to_append = []
     for seg in SEGMENTS:
-        print(f"  → {seg['name']} : {seg['origin']} → {seg['destination']}")
+        print(f"  → {seg['name']}")
         try:
             data = get_travel_time(api_key, seg["origin"], seg["destination"])
         except Exception as e:
-            print(f"     ⚠️  Erreur : {e}")
-            data = {k: "" for k in HEADER[4:]}
-            data["status"] = f"ERROR: {e}"
-        row = [ts_utc, ts_local, seg["name"],
-               data.get("duration_normal_s",""), data.get("duration_traffic_s",""),
-               data.get("duration_normal_min",""), data.get("duration_traffic_min",""),
-               data.get("delay_min",""), data.get("distance_m",""),
-               data.get("distance_km",""), data.get("traffic_ratio",""),
-               data.get("status","ERROR")]
+            print(f"     ⚠️  Erreur Maps : {e}")
+            data = {"status": f"ERROR: {e}"}
+
+        row = [
+            ts_utc, ts_local, seg["name"],
+            data.get("duration_normal_s", ""), data.get("duration_traffic_s", ""),
+            data.get("duration_normal_min", ""), data.get("duration_traffic_min", ""),
+            data.get("delay_min", ""), data.get("distance_m", ""),
+            data.get("distance_km", ""), data.get("traffic_ratio", ""),
+            data.get("status", "ERROR"),
+        ]
         rows_to_append.append(row)
+
         if data.get("status") == "OK":
             print(f"     ✓ {data['duration_traffic_min']} min (+{data['delay_min']} min, ratio {data['traffic_ratio']})")
-    for row in rows_to_append:
-        worksheet.append_row(row, value_input_option="USER_ENTERED")
-    print(f"[{ts_utc}] ✅ {len(rows_to_append)} ligne(s) écrite(s).")
+
+    append_rows(sheet_id, token, rows_to_append)
+    print(f"[{ts_utc}] ✅ {len(rows_to_append)} ligne(s) écrite(s) dans Sheets.")
+
 
 if __name__ == "__main__":
     main()
