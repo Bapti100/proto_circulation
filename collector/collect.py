@@ -86,7 +86,7 @@ def append_rows(sheet_id, token, rows):
     body = {"values": rows}
     result = sheets_request(
         "POST",
-        f"{sheet_id}/values/{SHEET_NAME}!A1:append?valueInputOption=USER_ENTERED&insertDataOption=INSERT_ROWS",
+        f"{sheet_id}/values/trafic_data!A1:append?valueInputOption=USER_ENTERED&insertDataOption=INSERT_ROWS",
         token,
         body,
     )
