@@ -27,7 +27,7 @@ SEGMENTS = [
     },
 ]
 
-SHEET_NAME = "trafic_data"
+SHEET_NAME = "traficdata"
 HEADER = [
     "timestamp_utc", "timestamp_local", "segment",
     "duration_normal_s", "duration_traffic_s",
