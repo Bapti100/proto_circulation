@@ -18,20 +18,20 @@ import google.auth
 
 SEGMENTS = [
     {
-        "name": "Troncon_A_B",
-        "origin": "Megeve, France",
-        "destination": "Annecy, France",
+        "name": "Troncon_RondPointAlex_MairieThones",
+        "origin": "45.89168702079083, 6.251281047403949",
+        "destination": "45.88199670566962, 6.324809885145161",
     },
     {
-        "name": "Troncon_A_C",
-        "origin": "Megeve, France",
-        "destination": "Sallanches, France",
+        "name": "Troncon_SallonDesDames_MairieThones",
+        "origin": "45.90603714406791, 6.421877941967397",
+        "destination": "45.88199670566962, 6.324809885145161",
     },
-    # {
-    #     "name": "Troncon_A_D",
-    #     "origin": "Megeve, France",
-    #     "destination": "Chamonix, France",
-    # },
+    {
+        "name": "Troncon_GareAnnecy_MairieThones",
+        "origin": "45.901535520060776, 6.121084193621739",
+        "destination": "45.88199670566962, 6.324809885145161",
+    },
 ]
 
 SHEET_NAME = "trafic_data"
