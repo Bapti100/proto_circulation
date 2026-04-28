@@ -15,7 +15,7 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
 
 <style>
-/* --- Variables --- */
+/* ─── Variables ─── */
 :root {
   --bg:        #0d1117;
   --surface:   #161b22;
@@ -40,7 +40,7 @@ body {
   min-height: 100vh;
 }
 
-/* --- Header --- */
+/* ─── Header ─── */
 header {
   border-bottom: 1px solid var(--border);
   padding: 28px 40px;
@@ -64,7 +64,7 @@ header {
 }
 #status-bar b { color: var(--accent3); }
 
-/* --- Layout --- */
+/* ─── Layout ─── */
 main {
   max-width: 1280px;
   margin: 0 auto;
@@ -74,7 +74,7 @@ main {
   gap: 56px;
 }
 
-/* --- Section --- */
+/* ─── Section ─── */
 .section-title {
   font-family: var(--font-mono);
   font-size: 0.7rem;
@@ -89,7 +89,7 @@ main {
   margin-bottom: 24px;
 }
 
-/* --- KPI Cards --- */
+/* ─── KPI Cards ─── */
 .kpi-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
@@ -120,7 +120,7 @@ main {
   margin-top: 2px;
 }
 
-/* --- Filter bar --- */
+/* ─── Filter bar ─── */
 .filter-bar {
   display: flex;
   gap: 10px;
@@ -148,7 +148,7 @@ select:hover, button.btn:hover {
 }
 select:focus { outline: none; border-color: var(--accent2); }
 
-/* --- Chart wrappers --- */
+/* ─── Chart wrappers ─── */
 .chart-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(540px, 1fr));
@@ -210,7 +210,7 @@ select:focus { outline: none; border-color: var(--accent2); }
   border-color: var(--accent);
 }
 
-/* --- Loading / error --- */
+/* ─── Loading / error ─── */
 #loading {
   display: flex;
   flex-direction: column;
@@ -231,7 +231,7 @@ select:focus { outline: none; border-color: var(--accent2); }
 
 #app { display: none; }
 
-/* --- Responsive --- */
+/* ─── Responsive ─── */
 @media (max-width: 600px) {
   header { padding: 16px 16px; }
   main { padding: 24px 12px 60px; }
@@ -256,7 +256,7 @@ select:focus { outline: none; border-color: var(--accent2); }
 
 <main>
 
-  <!-- -- 0. Sélecteur de tronçon -- -->
+  <!-- ── 0. Sélecteur de tronçon ── -->
   <div>
     <div class="section-title">// Configuration</div>
     <div class="filter-bar">
@@ -266,7 +266,7 @@ select:focus { outline: none; border-color: var(--accent2); }
     <div class="kpi-grid" id="kpi-grid"></div>
   </div>
 
-  <!-- -- 1. Heatmap heure × jour -- -->
+  <!-- ── 1. Heatmap heure × jour ── -->
   <div>
     <div class="section-title">// 01 — Affluence moyenne</div>
     <div class="section-desc">Durée moyenne (min) avec trafic selon l'heure et le jour de la semaine, sur toute la période collectée.</div>
@@ -275,7 +275,7 @@ select:focus { outline: none; border-color: var(--accent2); }
     </div>
   </div>
 
-  <!-- -- 2. Top 5 pires semaines -- -->
+  <!-- ── 2. Top 5 pires semaines ── -->
   <div>
     <div class="section-title">// 02 — Top 5 semaines les plus chargées</div>
     <div class="section-desc">Les 5 semaines où le trafic a été le pire (ratio trafic/normal le plus élevé). Cliquez sur une semaine pour afficher son profil horaire.</div>
@@ -289,7 +289,7 @@ select:focus { outline: none; border-color: var(--accent2); }
     </div>
   </div>
 
-  <!-- -- 3. Semaine vs Week-end par mois -- -->
+  <!-- ── 3. Semaine vs Week-end par mois ── -->
   <div>
     <div class="section-title">// 03 — Semaine vs Week-end · par mois</div>
     <div class="section-desc">Durée moyenne avec trafic selon l'heure, séparée entre jours de semaine et week-end, pour chaque mois.</div>
@@ -311,17 +311,17 @@ select:focus { outline: none; border-color: var(--accent2); }
     </div>
   </div>
 
-  <!-- -- 4. Semaine vs Week-end par saison -- -->
+  <!-- ── 4. Semaine vs Week-end par saison ── -->
   <div>
     <div class="section-title">// 04 — Semaine vs Week-end · par saison</div>
     <div class="section-desc">Même vue, mais agrégée par saison. Idéal pour voir l'impact de la haute saison touristique.</div>
     <div class="filter-bar">
       <label>Saison :</label>
       <select id="season-select">
-        <option value="Hiver">?? Hiver (Déc–Fév)</option>
-        <option value="Printemps">?? Printemps (Mar–Mai)</option>
-        <option value="Été">?? Été (Juin–Août)</option>
-        <option value="Automne" selected>?? Automne (Sep–Nov)</option>
+        <option value="Hiver">❄️ Hiver (Déc–Fév)</option>
+        <option value="Printemps">🌱 Printemps (Mar–Mai)</option>
+        <option value="Été">☀️ Été (Juin–Août)</option>
+        <option value="Automne" selected>🍂 Automne (Sep–Nov)</option>
       </select>
     </div>
     <div class="chart-grid">
@@ -342,20 +342,20 @@ select:focus { outline: none; border-color: var(--accent2); }
 </div>
 
 <script>
-// --------------------------------------------
+// ════════════════════════════════════════════
 //  CONFIGURATION — à modifier
-// --------------------------------------------
+// ════════════════════════════════════════════
 
 // URL de votre Google Sheets publié en CSV
-// Dans Sheets : Fichier ? Partager ? Publier sur le Web ? Format CSV ? Copier le lien
+// Dans Sheets : Fichier → Partager → Publier sur le Web → Format CSV → Copier le lien
 const CSV_URL = "VOTRE_URL_GOOGLE_SHEETS_CSV_ICI";
 
 // Fallback : données de démo si aucune URL configurée
 const USE_DEMO = CSV_URL.startsWith("VOTRE");
 
-// --------------------------------------------
+// ════════════════════════════════════════════
 //  UTILITAIRES
-// --------------------------------------------
+// ════════════════════════════════════════════
 
 const DAYS   = ["Lun","Mar","Mer","Jeu","Ven","Sam","Dim"];
 const MONTHS = ["Jan","Fév","Mar","Avr","Mai","Juin","Juil","Août","Sep","Oct","Nov","Déc"];
@@ -404,9 +404,9 @@ function groupBy(data, keyFn) {
   return out;
 }
 
-// --------------------------------------------
+// ════════════════════════════════════════════
 //  DÉMO DATA GENERATOR
-// --------------------------------------------
+// ════════════════════════════════════════════
 
 function generateDemoData() {
   const rows = [];
@@ -458,9 +458,9 @@ function generateDemoData() {
   return rows;
 }
 
-// --------------------------------------------
+// ════════════════════════════════════════════
 //  CHART HELPERS
-// --------------------------------------------
+// ════════════════════════════════════════════
 
 const CHART_DEFAULTS = {
   responsive: true,
@@ -497,9 +497,9 @@ function makeLineChart(id, labels, datasets) {
   });
 }
 
-// --------------------------------------------
+// ════════════════════════════════════════════
 //  HEATMAP (canvas 2D)
-// --------------------------------------------
+// ════════════════════════════════════════════
 
 function drawHeatmap(data) {
   const HOURS = Array.from({length: 24}, (_,i) => i);
@@ -554,7 +554,7 @@ function drawHeatmap(data) {
         ctx.fillRect(x+1, y+1, CW-2, CH-2);
       } else {
         const t = (v - minV) / (maxV - minV);
-        // Couleur : bleu ? orange ? rouge
+        // Couleur : bleu → orange → rouge
         let r, g, b;
         if (t < 0.5) {
           r = Math.round(121 + (247-121)*t*2);
@@ -590,9 +590,9 @@ function drawHeatmap(data) {
   ctx.fillText(`${Math.round(maxV)} min`, LX + 7*CW, LY + 8);
 }
 
-// --------------------------------------------
+// ════════════════════════════════════════════
 //  SECTION 2 — TOP 5 PIRES SEMAINES
-// --------------------------------------------
+// ════════════════════════════════════════════
 
 let worstWeeksData = [], currentWorstIdx = 0;
 
@@ -645,9 +645,9 @@ function renderWorstWeekChart(rows) {
   makeLineChart("worst-week-chart", HOURS.map(h => `${String(h).padStart(2,"0")}h`), datasets);
 }
 
-// --------------------------------------------
+// ════════════════════════════════════════════
 //  SECTION 3 — PAR MOIS
-// --------------------------------------------
+// ════════════════════════════════════════════
 
 function renderMonthCharts(data, month) {
   const HOURS = Array.from({length: 24}, (_,i) => i);
@@ -676,9 +676,9 @@ function renderMonthCharts(data, month) {
   makeLineChart("month-wknd-chart", labels, buildDatasets(true));
 }
 
-// --------------------------------------------
+// ════════════════════════════════════════════
 //  SECTION 4 — PAR SAISON
-// --------------------------------------------
+// ════════════════════════════════════════════
 
 function renderSeasonCharts(data, season) {
   const HOURS = Array.from({length: 24}, (_,i) => i);
@@ -708,9 +708,9 @@ function renderSeasonCharts(data, season) {
   makeLineChart("season-wknd-chart", labels, buildDatasets(true));
 }
 
-// --------------------------------------------
+// ════════════════════════════════════════════
 //  KPI CARDS
-// --------------------------------------------
+// ════════════════════════════════════════════
 
 function renderKPIs(data) {
   const durs = data.map(r => r._dur).filter(v => v !== null);
@@ -741,9 +741,9 @@ function renderKPIs(data) {
   `;
 }
 
-// --------------------------------------------
+// ════════════════════════════════════════════
 //  MAIN — chargement & orchestration
-// --------------------------------------------
+// ════════════════════════════════════════════
 
 let ALL_DATA = [];
 let SEGMENTS_LIST = [];
@@ -784,7 +784,7 @@ async function loadData() {
   if (USE_DEMO) {
     rows = generateDemoData();
     document.getElementById("status-bar").innerHTML =
-      `<span style="color:var(--accent)">? Mode démo</span> · configurez CSV_URL dans index.html · <b id="total-rows">${rows.length} mesures</b>`;
+      `<span style="color:var(--accent)">⚠ Mode démo</span> · configurez CSV_URL dans index.html · <b id="total-rows">${rows.length} mesures</b>`;
   } else {
     try {
       const resp = await fetch(CSV_URL);
@@ -810,7 +810,7 @@ async function loadData() {
   currentSegment = SEGMENTS_LIST[0] || null;
   seg.value = currentSegment || "";
 
-  // Dernier timestamp
+
   const lastTs = ALL_DATA.map(r => r.timestamp_utc).sort().pop() || "—";
   document.getElementById("last-update").textContent = lastTs.slice(0, 16);
   document.getElementById("total-rows").textContent = ALL_DATA.length.toLocaleString("fr-FR") + " mesures";
