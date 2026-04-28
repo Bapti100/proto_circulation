@@ -1,7 +1,7 @@
-# ?? Moniteur de trafic — Guide de mise en place
+# ðŸš¦ Moniteur de trafic â€” Guide de mise en place
 
-Un système automatisé pour surveiller et analyser le trafic sur vos tronçons routiers.  
-**Coût total : 0 €.** Stack : Python · GitHub Actions · Google Sheets · GitHub Pages.
+Un systÃ¨me automatisÃ© pour surveiller et analyser le trafic sur vos tronÃ§ons routiers.  
+**CoÃ»t total : 0 â‚¬.** Stack : Python Â· GitHub Actions Â· Google Sheets Â· GitHub Pages.
 
 ---
 
@@ -9,19 +9,19 @@ Un système automatisé pour surveiller et analyser le trafic sur vos tronçons rou
 
 ```
 GitHub Actions (cron horaire)
-    +-? collect.py
-            +-? Google Maps Distance Matrix API
-            +-? Google Sheets (stockage CSV)
-                    +-? GitHub Pages (index.html)
-                            +-? Chart.js (graphiques)
+    â””â”€â–¶ collect.py
+            â””â”€â–¶ Google Maps Distance Matrix API
+            â””â”€â–¶ Google Sheets REST API v4 (stockage CSV)
+                    â””â”€â–¶ GitHub Pages (index.html)
+                            â””â”€â–¶ Chart.js (graphiques)
 ```
 
 ---
 
-## Étape 1 — Créer le dépôt GitHub
+## Ã‰tape 1 â€” CrÃ©er le dÃ©pÃ´t GitHub
 
-1. Créez un nouveau dépôt GitHub (ex : `trafic-monitor`)
-2. Copiez-y tous les fichiers de ce projet dans la même structure :
+1. CrÃ©ez un nouveau dÃ©pÃ´t GitHub (ex : `trafic-monitor`)
+2. Copiez-y tous les fichiers dans cette structure :
    ```
    .github/workflows/collect.yml
    collector/collect.py
@@ -29,132 +29,155 @@ GitHub Actions (cron horaire)
    docs/index.html
    README.md
    ```
-3. Dans **Settings ? Pages**, configurez :
+3. Dans **Settings â†’ Pages** :
    - Source : `Deploy from branch`
    - Branch : `main`, dossier : `/docs`
-   - Votre site sera accessible à `https://VOTRE-USER.github.io/trafic-monitor/`
+   - Votre site sera accessible Ã  `https://VOTRE-USER.github.io/trafic-monitor/`
 
 ---
 
-## Étape 2 — Clé API Google Maps
+## Ã‰tape 2 â€” ClÃ© API Google Maps
 
 1. Allez sur [console.cloud.google.com](https://console.cloud.google.com)
-2. Créez un projet (ou sélectionnez-en un)
-3. Activez l'API **Distance Matrix API**
-4. Dans **Identifiants ? Créer des identifiants ? Clé API**
-5. (Recommandé) Restreignez la clé à l'API Distance Matrix uniquement
-6. Copiez la clé ? vous en aurez besoin à l'étape 4
+2. CrÃ©ez un projet ou sÃ©lectionnez-en un
+3. Activez l'API **Distance Matrix API** :  
+   `APIs & Services â†’ BibliothÃ¨que â†’ Distance Matrix API â†’ Activer`
+4. Dans **APIs & Services â†’ Identifiants â†’ CrÃ©er des identifiants â†’ ClÃ© API**
+5. Cliquez sur la clÃ© â†’ **Restriction d'API** â†’ cochez uniquement **Distance Matrix API**
+6. Enregistrez et copiez la clÃ©
 
-> **Quota gratuit** : 10 000 requêtes/mois.  
-> Avec 3 tronçons collectés toutes les heures : ~2 160 req/mois par tronçon × 3 = **6 480/mois** ? dans la limite gratuite.
+> **Quota gratuit** : 10 000 requÃªtes/mois.  
+> Avec 3 tronÃ§ons toutes les heures : ~2 160 req/mois Ã— 3 = **6 480/mois** â†’ dans la limite gratuite.
 
 ---
 
-## Étape 3 — Créer le Google Sheet et le compte de service
+## Ã‰tape 3 â€” Compte de service Google
 
-### 3a. Créer le Google Sheet
+### 3a. CrÃ©er le compte de service
 
-1. Allez sur [sheets.google.com](https://sheets.google.com)
-2. Créez un nouveau fichier (ex : `trafic-data`)
-3. Copiez l'**ID du sheet** depuis l'URL :  
-   `https://docs.google.com/spreadsheets/d/**VOTRE_ID**/edit`
-
-### 3b. Créer un compte de service Google
-
-1. Sur [console.cloud.google.com](https://console.cloud.google.com), allez dans **IAM ? Comptes de service**
-2. Cliquez **Créer un compte de service**
+1. Dans GCP : **IAM et administration â†’ Comptes de service â†’ CrÃ©er**
    - Nom : `trafic-collector`
-   - Cliquez **Créer et continuer** ? **OK**
-3. Dans la liste, cliquez sur votre compte de service ? onglet **Clés**
-4. **Ajouter une clé ? Créer une nouvelle clé ? JSON**
-5. Un fichier `.json` est téléchargé ? **gardez-le précieusement**
-6. Activez l'API **Google Sheets API** et **Google Drive API** sur votre projet
+   - Cliquez **CrÃ©er et continuer â†’ OK**
 
-### 3c. Partager le Sheet avec le compte de service
+> âš ï¸ La crÃ©ation de clÃ©s JSON est dÃ©sactivÃ©e par dÃ©faut sur les nouveaux comptes GCP.  
+> On utilise Ã  la place le **Workload Identity Federation** (WIF) â€” plus sÃ©curisÃ©.
 
-1. Ouvrez votre Google Sheet
-2. Cliquez **Partager**
-3. Collez l'email du compte de service (ex: `trafic-collector@mon-projet.iam.gserviceaccount.com`)
-4. Donnez-lui les droits **Éditeur**
+### 3b. Activer les APIs nÃ©cessaires
 
-### 3d. Publier le Sheet en CSV (pour le site web)
+Activez ces deux APIs dans **APIs & Services â†’ BibliothÃ¨que** :
+- **Google Sheets API**
+- **Google Drive API**
 
-1. Dans Google Sheets : **Fichier ? Partager ? Publier sur le Web**
-2. Choisissez :
-   - Feuille : `trafic_data`
-   - Format : **Valeurs séparées par des virgules (.csv)**
-3. Cliquez **Publier**
-4. Copiez l'URL générée (du type `https://docs.google.com/spreadsheets/d/.../pub?...&output=csv`)
-5. Collez cette URL dans `docs/index.html` à la ligne :
-   ```js
-   const CSV_URL = "COLLER_VOTRE_URL_ICI";
-   ```
+### 3c. Configurer Workload Identity Federation
+
+1. Dans GCP : **IAM â†’ FÃ©dÃ©ration d'identitÃ© de charge de travail â†’ CrÃ©er un pool**
+   - Nom du pool : `github-actions-pool`
+   - ID du pool : `github-actions-pool`
+
+2. Ajouter un fournisseur dans ce pool :
+   - Type : **OIDC**
+   - Nom : `GitHub Actions`
+   - ID : `github-actions-provider`
+   - URL de l'Ã©metteur : `https://token.actions.githubusercontent.com`
+   - Mappage d'attributs :
+     - `google.subject` â†’ `assertion.sub`
+     - `attribute.repository` â†’ `assertion.repository`
+   - Condition d'attribut : `attribute.repository == "VOTRE-USERNAME/VOTRE-DEPOT"`
+
+3. Sur la page du pool â†’ **Accorder l'accÃ¨s** :
+   - Compte de service : `trafic-collector`
+   - Nom d'attribut : `repository`
+   - Valeur : `VOTRE-USERNAME/VOTRE-DEPOT`
+
+### 3d. Accorder les rÃ´les IAM au compte de service
+
+Dans **IAM â†’ Accorder l'accÃ¨s**, ajoutez deux entrÃ©es :
+
+| Principal | RÃ´le |
+|-----------|------|
+| `trafic-collector@...iam.gserviceaccount.com` | CrÃ©ateur de jetons du compte de service |
+| `principalSet://iam.googleapis.com/projects/NUMERO/locations/global/workloadIdentityPools/github-actions-pool/attribute.repository/VOTRE-USERNAME/VOTRE-DEPOT` | CrÃ©ateur de jetons du compte de service |
+
+### 3e. Partager le Google Sheet avec le compte de service
+
+1. CrÃ©ez un Google Sheet
+2. Cliquez **Partager** â†’ ajoutez `trafic-collector@VOTRE-PROJET.iam.gserviceaccount.com` en **Ã‰diteur**
+3. L'onglet `traficdata` sera crÃ©Ã© automatiquement par le script au premier lancement
 
 ---
 
-## Étape 4 — Configurer les secrets GitHub
+## Ã‰tape 4 â€” Secrets GitHub
 
-Dans votre dépôt GitHub : **Settings ? Secrets and variables ? Actions ? New repository secret**
+Dans votre dÃ©pÃ´t : **Settings â†’ Secrets and variables â†’ Actions â†’ New repository secret**
 
-Créez ces 3 secrets :
-
-| Nom du secret       | Valeur |
-|---------------------|--------|
-| `GMAPS_API_KEY`     | Votre clé API Google Maps (étape 2) |
-| `GSHEET_ID`         | L'ID de votre Google Sheet (étape 3a) |
-| `GSHEET_CREDENTIALS`| Le **contenu complet** du fichier JSON téléchargé (étape 3b) |
-
-> Pour `GSHEET_CREDENTIALS` : ouvrez le fichier JSON téléchargé, sélectionnez tout le contenu, collez-le tel quel comme valeur du secret.
+| Secret | Valeur |
+|--------|--------|
+| `GMAPS_API_KEY` | Votre clÃ© API Google Maps |
+| `GSHEET_ID` | L'ID de votre Google Sheet (dans l'URL : `/spreadsheets/d/ICI/edit`) |
+| `WIF_PROVIDER` | `projects/NUMERO/locations/global/workloadIdentityPools/github-actions-pool/providers/github-actions-provider` |
+| `WIF_SERVICE_ACCOUNT` | `trafic-collector@VOTRE-PROJET.iam.gserviceaccount.com` |
 
 ---
 
-## Étape 5 — Configurer vos tronçons
+## Ã‰tape 5 â€” Configurer vos tronÃ§ons
 
-Ouvrez `collector/collect.py` et modifiez la section `SEGMENTS` :
+Dans `collector/collect.py`, modifiez la section `SEGMENTS` :
 
 ```python
 SEGMENTS = [
     {
         "name": "Troncon_A_B",
-        "origin": "Megeve, France",        # ? votre point de départ
-        "destination": "Annecy, France",   # ? votre destination
+        "origin": "45.8566, 6.7179",      # coordonnÃ©es GPS ou "Ville, France"
+        "destination": "45.9012, 6.1234",
     },
     {
         "name": "Troncon_A_C",
-        "origin": "Megeve, France",
-        "destination": "Sallanches, France",
+        "origin": "45.8566, 6.7179",
+        "destination": "45.7890, 6.4567",
     },
 ]
 ```
 
-Utilisez des noms de villes précis, ou des coordonnées GPS (`"45.857,6.617"`).
+> Les coordonnÃ©es GPS sont plus fiables que les noms de villes pour l'API Google Maps.
 
 ---
 
-## Étape 6 — Tester
+## Ã‰tape 6 â€” Tester
 
-1. Commitez et pushez tous les fichiers
-2. Dans GitHub : **Actions ? Collecte trafic horaire ? Run workflow**
-3. Vérifiez que le workflow se termine en ? vert
-4. Ouvrez votre Google Sheet ? vous devriez voir des lignes apparaître dans l'onglet `trafic_data`
-5. Ouvrez votre GitHub Pages URL ? le site s'affiche avec les données
+1. Committez et pushez tous les fichiers
+2. Dans GitHub : **Actions â†’ Collecte trafic horaire â†’ Run workflow**
+3. VÃ©rifiez que le workflow se termine en âœ… vert
+4. Ouvrez votre Google Sheet â†’ l'onglet `traficdata` apparaÃ®t avec les donnÃ©es
 
 ---
 
-## Structure des données (Google Sheets)
+## Ã‰tape 7 â€” Activer le site web (aprÃ¨s ~1 mois de donnÃ©es)
+
+1. Dans Google Sheets : **Fichier â†’ Partager â†’ Publier sur le Web**
+   - Feuille : `traficdata` Â· Format : **CSV** Â· Publier
+   - Copiez l'URL gÃ©nÃ©rÃ©e
+2. Dans `docs/index.html`, remplacez :
+   ```js
+   const CSV_URL = "VOTRE_URL_GOOGLE_SHEETS_CSV_ICI";
+   ```
+3. Committez â†’ GitHub Pages publie automatiquement
+
+---
+
+## Structure des donnÃ©es (Google Sheets â€” onglet `traficdata`)
 
 | Colonne | Description |
 |---------|-------------|
-| `timestamp_utc` | Horodatage UTC de la mesure |
+| `timestamp_utc` | Horodatage UTC |
 | `timestamp_local` | Horodatage local |
-| `segment` | Nom du tronçon (`Troncon_A_B`) |
-| `duration_normal_s` | Durée sans trafic (secondes) |
-| `duration_traffic_s` | Durée avec trafic (secondes) |
-| `duration_normal_min` | Durée sans trafic (minutes) |
-| `duration_traffic_min` | Durée avec trafic (minutes) |
-| `delay_min` | Retard dû au trafic (minutes) |
-| `distance_m` | Distance en mètres |
-| `distance_km` | Distance en kilomètres |
+| `segment` | Nom du tronÃ§on |
+| `duration_normal_s` | DurÃ©e sans trafic (secondes) |
+| `duration_traffic_s` | DurÃ©e avec trafic (secondes) |
+| `duration_normal_min` | DurÃ©e sans trafic (minutes) |
+| `duration_traffic_min` | DurÃ©e avec trafic (minutes) |
+| `delay_min` | Retard dÃ» au trafic (minutes) |
+| `distance_m` | Distance (mÃ¨tres) |
+| `distance_km` | Distance (km) |
 | `traffic_ratio` | Ratio trafic/normal (1.5 = 50% de plus) |
 | `status` | `OK` ou message d'erreur |
 
@@ -164,32 +187,27 @@ Utilisez des noms de villes précis, ou des coordonnées GPS (`"45.857,6.617"`).
 
 | # | Graphique | Description |
 |---|-----------|-------------|
-| 01 | **Heatmap heure × jour** | Vue globale de l'affluence moyenne par heure et jour de semaine |
-| 02 | **Top 5 pires semaines** | Les 5 semaines avec le ratio de trafic le plus élevé, profil horaire détaillé |
-| 03 | **Semaine vs Week-end par mois** | Comparaison heure par heure, filtrable par mois |
-| 04 | **Semaine vs Week-end par saison** | Même comparaison agrégée par saison (Hiver/Printemps/Été/Automne) |
+| 01 | **Heatmap heure Ã— jour** | Affluence moyenne par heure et jour de semaine |
+| 02 | **Top 5 pires semaines** | Les 5 semaines avec le ratio de trafic le plus Ã©levÃ© |
+| 03 | **Semaine vs Week-end par mois** | Comparaison heure par heure par mois |
+| 04 | **Semaine vs Week-end par saison** | MÃªme comparaison par saison |
 
 ---
 
-## Dépannage
+## DÃ©pannage
 
-**Le workflow échoue avec "quota exceeded"**  
-? Vérifiez que la Distance Matrix API est activée sur votre projet GCP et que vous n'avez pas dépassé le quota.
-
-**"Spreadsheet not found"**  
-? Vérifiez que le Sheet est bien partagé avec l'email du compte de service.
-
-**Le site affiche "Mode démo"**  
-? Vous n'avez pas encore remplacé `CSV_URL` dans `docs/index.html`.
-
-**Les données n'apparaissent pas dans Sheets**  
-? Vérifiez le contenu du secret `GSHEET_CREDENTIALS` (doit être le JSON complet, pas encodé en base64).
+| Erreur | Cause probable | Solution |
+|--------|---------------|----------|
+| `REQUEST_DENIED` (Maps) | ClÃ© API non configurÃ©e ou mauvaise restriction | VÃ©rifier la clÃ© dans les secrets GitHub et la restriction Distance Matrix |
+| `unauthorized_client` (WIF) | Condition d'attribut incorrecte | VÃ©rifier `attribute.repository == "USER/DEPOT"` dans le fournisseur WIF |
+| `PERMISSION_DENIED` (Sheets) | RÃ´les IAM manquants | Ajouter le rÃ´le "CrÃ©ateur de jetons" au compte de service |
+| `400 Bad Request` (Sheets) | Onglet inexistant | Le script crÃ©e automatiquement l'onglet `traficdata` au premier run |
+| `401 Unauthorized` (Sheets) | Sheet non partagÃ© avec le compte de service | Partager le Sheet avec l'email du compte de service en Ã‰diteur |
 
 ---
 
-## Évolutions possibles
+## Ã‰volutions possibles
 
-- Ajouter des **alertes email/Telegram** quand le trafic dépasse un seuil
-- Intégrer un **modèle prédictif** (régression linéaire) pour estimer la durée future
-- Ajouter un **filtre par date** sur le site web
-- Connecter à **Home Assistant** pour déclencher des automatisations
+- Ajouter des **alertes email/Telegram** quand le trafic dÃ©passe un seuil
+- IntÃ©grer un **modÃ¨le prÃ©dictif** pour estimer la durÃ©e future
+- Connecter Ã  **Home Assistant** pour dÃ©clencher des automatisations
