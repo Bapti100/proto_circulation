@@ -1,6 +1,6 @@
 """
 collect.py — Collecte horaire du temps de trajet via Google Maps Distance Matrix API
-Écrit les données dans Google Sheets via l'API REST.
+Écrit les données dans Google Sheets via l'API REST v4.
 """
 
 import os
@@ -36,9 +36,10 @@ HEADER = [
     "traffic_ratio", "status",
 ]
 
+BASE_URL = "https://sheets.googleapis.com/v4/spreadsheets"
+
 
 def get_token():
-    """Obtient un token OAuth2 via Application Default Credentials (WIF)."""
     scopes = [
         "https://www.googleapis.com/auth/spreadsheets",
         "https://www.googleapis.com/auth/drive",
@@ -50,47 +51,70 @@ def get_token():
     return creds.token
 
 
-def sheets_request(method, path, token, body=None):
-    """Appelle l'API Google Sheets REST."""
-    url = f"https://sheets.googleapis.com/v4/spreadsheets/{path}"
-    headers = {
-        "Authorization": f"Bearer {token}",
-        "Content-Type": "application/json",
+def api_call(method, path, token, body=None, params=None):
+    url = f"{BASE_URL}/{path}"
+    headers = {"Authorization": f"Bearer {token}", "Content-Type": "application/json"}
+    resp = requests.request(method, url, headers=headers, json=body, params=params, timeout=15)
+    return resp
+
+
+def create_sheet_if_not_exists(sheet_id, token):
+    """Crée l'onglet s'il n'existe pas via batchUpdate."""
+    # Vérifie d'abord si l'onglet existe
+    resp = api_call("GET", sheet_id, token)
+    if resp.status_code == 200:
+        sheets = resp.json().get("sheets", [])
+        for s in sheets:
+            if s["properties"]["title"] == SHEET_NAME:
+                print(f"✓ Onglet '{SHEET_NAME}' existe déjà.")
+                return
+    # Crée l'onglet
+    body = {
+        "requests": [
+            {"addSheet": {"properties": {"title": SHEET_NAME}}}
+        ]
     }
-    resp = requests.request(method, url, headers=headers, json=body, timeout=15)
-    resp.raise_for_status()
-    return resp.json() if resp.text else {}
+    resp = api_call("POST", f"{sheet_id}:batchUpdate", token, body)
+    if resp.status_code == 200:
+        print(f"✓ Onglet '{SHEET_NAME}' créé.")
+    else:
+        print(f"Note création onglet: {resp.status_code} {resp.text[:200]}")
 
 
-def ensure_sheet_header(sheet_id, token):
-    """Vérifie que l'onglet a les bons en-têtes."""
-    try:
-        data = sheets_request("GET", f"{sheet_id}/values/{SHEET_NAME}!A1:L1", token)
-        values = data.get("values", [])
+def ensure_header(sheet_id, token):
+    """Écrit l'en-tête si la première ligne est vide."""
+    resp = api_call("GET", f"{sheet_id}/values/{SHEET_NAME}!A1:L1", token)
+    if resp.status_code == 200:
+        values = resp.json().get("values", [])
         if values and values[0] == HEADER:
+            print("✓ En-têtes déjà présents.")
             return
-    except Exception:
-        pass
-    try:
-        body = {"values": [HEADER]}
-        sheets_request("PUT",
-            f"{sheet_id}/values/{SHEET_NAME}!A1:L1?valueInputOption=USER_ENTERED",
-            token, body)
-        print(f"En-têtes écrits dans '{SHEET_NAME}'.")
-    except Exception as e:
-        print(f"Note: impossible d'écrire les en-têtes : {e}")
+    # Écriture via append sur ligne 1
+    body = {"values": [HEADER], "majorDimension": "ROWS"}
+    resp = api_call(
+        "POST",
+        f"{sheet_id}/values/{SHEET_NAME}!A1:append",
+        token, body,
+        params={"valueInputOption": "RAW", "insertDataOption": "INSERT_ROWS"}
+    )
+    if resp.status_code == 200:
+        print("✓ En-têtes ajoutés.")
+    else:
+        print(f"Note en-têtes: {resp.status_code} {resp.text[:200]}")
 
 
 def append_rows(sheet_id, token, rows):
     """Ajoute des lignes à la suite du sheet."""
-    body = {"values": rows}
-    result = sheets_request(
+    body = {"values": rows, "majorDimension": "ROWS"}
+    resp = api_call(
         "POST",
-        f"{sheet_id}/values/{SHEET_NAME}:append?valueInputOption=USER_ENTERED&insertDataOption=INSERT_ROWS",
-        token,
-        body,
+        f"{sheet_id}/values/{SHEET_NAME}!A1:append",
+        token, body,
+        params={"valueInputOption": "RAW", "insertDataOption": "INSERT_ROWS"}
     )
-    return result
+    if resp.status_code != 200:
+        raise Exception(f"Sheets append error {resp.status_code}: {resp.text[:300]}")
+    return resp.json()
 
 
 def get_travel_time(api_key, origin, destination):
@@ -136,7 +160,8 @@ def main():
     print(f"[{ts_utc}] Collecte en cours pour {len(SEGMENTS)} tronçon(s)...")
 
     token = get_token()
-    ensure_sheet_header(sheet_id, token)
+    create_sheet_if_not_exists(sheet_id, token)
+    ensure_header(sheet_id, token)
 
     rows_to_append = []
     for seg in SEGMENTS:
