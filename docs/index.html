@@ -784,7 +784,7 @@ async function loadData() {
   if (USE_DEMO) {
     rows = generateDemoData();
     document.getElementById("status-bar").innerHTML =
-      `<span style="color:var(--accent)">⚠ Mode démo</span> · configurez CSV_URL dans index.html · <b id="total-rows">${rows.length} mesures</b>`;
+      `<span style="color:var(--accent)">⚠ Mode démo</span> · configurez CSV_URL dans index.html · <b id="last-update">—</b> · <b id="total-rows">—</b>`;
   } else {
     try {
       const resp = await fetch(CSV_URL);
@@ -803,6 +803,10 @@ async function loadData() {
   ALL_DATA = rows.map(parseDateFields).filter(r => r._dur !== null);
   SEGMENTS_LIST = [...new Set(ALL_DATA.map(r => r.segment))];
 
+  // Affichage en premier
+  document.getElementById("loading").style.display = "none";
+  document.getElementById("app").style.display = "block";
+
   // Segment selector
   const seg = document.getElementById("segment-select");
   seg.innerHTML = `<option value="">Tous les tronçons</option>` +
@@ -810,14 +814,12 @@ async function loadData() {
   currentSegment = SEGMENTS_LIST[0] || null;
   seg.value = currentSegment || "";
 
-
+  // Mise à jour status
   const lastTs = ALL_DATA.map(r => r.timestamp_utc).sort().pop() || "—";
-  document.getElementById("last-update").textContent = lastTs.slice(0, 16);
-  document.getElementById("total-rows").textContent = ALL_DATA.length.toLocaleString("fr-FR") + " mesures";
-
-  // Affichage
-  document.getElementById("loading").style.display = "none";
-  document.getElementById("app").style.display = "block";
+  const elLastUpdate = document.getElementById("last-update");
+  const elTotalRows  = document.getElementById("total-rows");
+  if (elLastUpdate) elLastUpdate.textContent = lastTs.slice(0, 16);
+  if (elTotalRows)  elTotalRows.textContent  = ALL_DATA.length.toLocaleString("fr-FR") + " mesures";
 
   renderAll();
 
