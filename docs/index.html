@@ -66,7 +66,7 @@ select:focus { outline: none; border-color: var(--accent2); }
 <div id="app">
 <header>
   <div class="logo">trafic<span>.</span>monitor</div>
-  <div id="status-bar">dernière mise à jour : <b id="last-update">—</b> · <b id="total-rows">—</b> mesures</div>
+  <div id="status-bar">dernière mise à jour : <b id="last-update">—</b> · <b id="total-rows">—</b></div>
 </header>
 <main>
   <div>
@@ -79,7 +79,7 @@ select:focus { outline: none; border-color: var(--accent2); }
   </div>
   <div>
     <div class="section-title">// 01 — Affluence moyenne</div>
-    <div class="section-desc">Durée moyenne (min) avec trafic selon l'heure et le jour de la semaine, sur toute la période collectée.</div>
+    <div class="section-desc">Durée moyenne (min) avec trafic selon l'heure locale et le jour de la semaine, sur toute la période collectée.</div>
     <div class="heatmap-wrap"><canvas id="heatmap-canvas"></canvas></div>
   </div>
   <div>
@@ -94,7 +94,7 @@ select:focus { outline: none; border-color: var(--accent2); }
   </div>
   <div>
     <div class="section-title">// 03 — Semaine vs Week-end · par mois</div>
-    <div class="section-desc">Durée moyenne avec trafic selon l'heure, séparée entre jours de semaine et week-end, pour chaque mois.</div>
+    <div class="section-desc">Durée moyenne avec trafic selon l'heure locale, séparée entre jours de semaine et week-end, pour chaque mois.</div>
     <div class="filter-bar">
       <label>Mois :</label>
       <select id="month-select"></select>
@@ -149,28 +149,30 @@ const SEASONS     = { Hiver:[12,1,2], Printemps:[3,4,5], Été:[6,7,8], Automne:
 const PALETTE     = ["#f78166","#79c0ff","#56d364","#ffa657","#d2a8ff","#ff7b72"];
 
 function parseDateFields(row) {
-  const ts = row.timestamp_utc || row.timestamp_local || "";
-  const d  = new Date(ts.replace(" ", "T") + "Z");
+  // On utilise timestamp_local en priorité pour avoir l'heure française
+  const ts = row.timestamp_local || row.timestamp_utc || "";
+  // Pas de "Z" à la fin : le navigateur interprète comme heure locale
+  const d = new Date(ts.replace(" ", "T"));
   return {
     ...row,
     _date:   d,
-    _hour:   d.getUTCHours(),
-    _dow:    (d.getUTCDay() + 6) % 7,
-    _month:  d.getUTCMonth() + 1,
+    _hour:   d.getHours(),
+    _dow:    (d.getDay() + 6) % 7,   // 0=Lun … 6=Dim
+    _month:  d.getMonth() + 1,        // 1-12
     _week:   getISOWeek(d),
-    _year:   d.getUTCFullYear(),
-    _isWknd: d.getUTCDay() === 0 || d.getUTCDay() === 6,
+    _year:   d.getFullYear(),
+    _isWknd: d.getDay() === 0 || d.getDay() === 6,
     _dur:    parseFloat(row.duration_traffic_min) || null,
     _ratio:  parseFloat(row.traffic_ratio) || null,
   };
 }
 
 function getISOWeek(d) {
-  const tmp = new Date(Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate()));
-  const dayNum = tmp.getUTCDay() || 7;
-  tmp.setUTCDate(tmp.getUTCDate() + 4 - dayNum);
-  const yearStart = new Date(Date.UTC(tmp.getUTCFullYear(), 0, 1));
-  return `${tmp.getUTCFullYear()}-W${String(Math.ceil((((tmp - yearStart) / 86400000) + 1) / 7)).padStart(2,"0")}`;
+  const tmp = new Date(d.getFullYear(), d.getMonth(), d.getDate());
+  const dayNum = tmp.getDay() || 7;
+  tmp.setDate(tmp.getDate() + 4 - dayNum);
+  const yearStart = new Date(tmp.getFullYear(), 0, 1);
+  return `${tmp.getFullYear()}-W${String(Math.ceil((((tmp - yearStart) / 86400000) + 1) / 7)).padStart(2,"0")}`;
 }
 
 function avg(arr) {
@@ -353,7 +355,7 @@ function renderKPIs(data) {
       <div class="kpi-sub">avec trafic</div></div>
     <div class="kpi-card"><div class="kpi-label">Pire durée enregistrée</div>
       <div class="kpi-value" style="color:var(--accent)">${worst?worst._dur.toFixed(0):"—"} <small style="font-size:1rem">min</small></div>
-      <div class="kpi-sub">${worst?worst.timestamp_utc?.slice(0,16):""}</div></div>
+      <div class="kpi-sub">${worst?worst.timestamp_local?.slice(0,16):""}</div></div>
     <div class="kpi-card"><div class="kpi-label">Ratio trafic max</div>
       <div class="kpi-value" style="color:var(--accent)">${ratios.length?Math.max(...ratios).toFixed(2):"—"}×</div>
       <div class="kpi-sub">durée réelle / durée idéale</div></div>
@@ -405,9 +407,10 @@ async function loadData() {
   currentSegment = segments[0] || null;
   seg.value = currentSegment || "";
 
+  // Heure locale pour le status bar
   const lastTs = ALL_DATA.map(r=>r.timestamp_local).sort().pop() || "—";
   document.getElementById("last-update").textContent = lastTs.slice(0,16);
-  document.getElementById("total-rows").textContent = ALL_DATA.length.toLocaleString("fr-FR");
+  document.getElementById("total-rows").textContent = ALL_DATA.length.toLocaleString("fr-FR") + " mesures";
 
   renderAll();
 
