@@ -8,6 +8,7 @@ import datetime
 import requests
 import google.auth
 import google.auth.transport.requests
+import zoneinfo
 
 SEGMENTS = [
     {
@@ -155,7 +156,8 @@ def main():
     sheet_id = os.environ["GSHEET_ID"]
 
     ts_utc   = datetime.datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S")
-    ts_local = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    tz = zoneinfo.ZoneInfo("Europe/Paris")
+    ts_local = datetime.datetime.now(tz).strftime("%Y-%m-%d %H:%M:%S")
 
     print(f"[{ts_utc}] Collecte en cours pour {len(SEGMENTS)} tronçon(s)...")
 
