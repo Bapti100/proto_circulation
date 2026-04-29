@@ -405,9 +405,9 @@ async function loadData() {
   currentSegment = segments[0] || null;
   seg.value = currentSegment || "";
 
-  const lastTs = ALL_DATA.map(r=>r.timestamp_utc).sort().pop() || "—";
+  const lastTs = ALL_DATA.map(r=>r.timestamp_local).sort().pop() || "—";
   document.getElementById("last-update").textContent = lastTs.slice(0,16);
-  document.getElementById("total-rows").textContent = ALL_DATA.length.toLocaleString("fr-FR") + " mesures";
+  document.getElementById("total-rows").textContent = ALL_DATA.length.toLocaleString("fr-FR");
 
   renderAll();
 
