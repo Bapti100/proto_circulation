@@ -346,12 +346,12 @@ select:focus { outline: none; border-color: var(--accent2); }
 //  CONFIGURATION — à modifier
 // ════════════════════════════════════════════
 
-// URL de votre Google Sheets publié en CSV
-// Dans Sheets : Fichier → Partager → Publier sur le Web → Format CSV → Copier le lien
-const CSV_URL = "VOTRE_URL_GOOGLE_SHEETS_CSV_ICI";
+// URL de votre Google Apps Script déployé comme webapp
+// Dans Sheets : Extensions → Apps Script → Déployer → Nouveau déploiement → copier l'URL
+const APPS_SCRIPT_URL = "VOTRE_URL_APPS_SCRIPT_ICI";
 
 // Fallback : données de démo si aucune URL configurée
-const USE_DEMO = CSV_URL.startsWith("VOTRE");
+const USE_DEMO = APPS_SCRIPT_URL.startsWith("VOTRE");
 
 // ════════════════════════════════════════════
 //  UTILITAIRES
@@ -787,15 +787,15 @@ async function loadData() {
       `<span style="color:var(--accent)">⚠ Mode démo</span> · configurez CSV_URL dans index.html · <b id="last-update">—</b> · <b id="total-rows">—</b>`;
   } else {
     try {
-      const resp = await fetch(CSV_URL);
+      const resp = await fetch(APPS_SCRIPT_URL);
       if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
-      const text = await resp.text();
-      const parsed = Papa.parse(text, { header: true, skipEmptyLines: true });
-      rows = parsed.data;
+      const json = await resp.json();
+      if (json.error) throw new Error(json.error);
+      rows = json.rows;
     } catch (e) {
       document.getElementById("loading").innerHTML =
         `<p style="color:var(--accent)">Erreur de chargement : ${e.message}</p>
-         <p style="color:var(--muted); margin-top:8px">Vérifiez que CSV_URL est correcte et que le sheet est public.</p>`;
+         <p style="color:var(--muted); margin-top:8px">Vérifiez que APPS_SCRIPT_URL est correcte dans index.html.</p>`;
       return;
     }
   }
